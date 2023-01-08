@@ -31,4 +31,4 @@ This proof of concept uses a random seed for the address creation(if reload the 
 
 The client is not intended to 'store funds' it is only and interface between the wallet and the server.
 
-:warning: This has only be tested on the Firefox browser
+**This has only be tested on the Firefox browser**
