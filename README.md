@@ -1,12 +1,12 @@
 # [DLockers Client](https://eddytheco.github.io/DLockersClient/wasm/)
 
 
-## Proof of Concept on implementing decentralized applications on the [IOTA](https://www.iota.org/) network.
+## Proof of Concept on implementing decentralized applications on the IOTA network.
 
 This application can be seen as a decentralized client that allows you to book a [locker]  by paying with Shimmer.
 
 
-The application is set to use the [Shimmer Testnet](https://explorer.shimmer.network/testnet/)
+The application is set to use the Shimmer Testnet
 and custom libraries developed by me.
 For sending a block to the network the application needs to perform Proof of Work.
 My implementation of proof of work it is not optimized and this will take much time on the browser, please be patient 
@@ -27,7 +27,7 @@ Because of that, the client needs an storage deposit of funds to be able to book
 This storage deposit plus the price of the booking will be asked to you the first time you book.
 The deposit is always own by the client and in the next booking you will only have to pay the price of the booking.
 This proof of concept uses a random seed for the address creation(if reload the page the client loses its funds).
-* *For paying to the client one can use a wallet like [firefly](https://firefly.iota.org/).*
+
 
 The client is not intended to 'store funds' it is only and interface between the wallet and the server.
 
