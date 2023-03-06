@@ -12,7 +12,7 @@ For sending a block to the network the application needs to perform Proof of Wor
 My implementation of proof of work it is not optimized and this will take much time on the browser, please be patient 
 or do a pull request to this [repo](https://github.com/EddyTheCo/Qpow-IOTA) with a faster implementation.
 
-In order to book a locker the client needs to 'connect' to a [server](https://eddytheco.github.io/DLockersClient/wasm/).
+In order to book a locker the client needs to 'connect' to a [server](https://eddytheco.github.io/DLockersServer/wasm/).
 For that one enters the server id. 
 
 One selects the day and hours of the booking(only the first contiguous-selected hours will be considered as a booking).
