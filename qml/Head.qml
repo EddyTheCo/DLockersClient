@@ -1,7 +1,6 @@
 import client
 import QtQuick 2.0
 import QtQuick.Layouts
-import QtQuick.Controls
 import MyDesigns
 import nodeConection
 import account
