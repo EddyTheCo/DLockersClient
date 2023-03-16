@@ -6,7 +6,7 @@
 #include<booking.hpp>
 #include<account.hpp>
 #include"nodeConnection.hpp"
-
+#include <queue>
 
 class Book_Client : public QObject
 {
@@ -54,7 +54,7 @@ signals:
 
 
 private:
-    void send_booking(Booking book, std::vector<Node_output> &outputs, Node_info *info);
+    void send_booking(Booking book);
 
     void set_to_pay(quint64 price){if(price!=topay_){topay_=price;emit topay_changed();}}
     void monitor_state(void);
@@ -70,5 +70,6 @@ private:
     qblocks::c_array server_id_,paytoaddrhash_;
     QObject* reciever;
     static ConState state_;
+    std::queue<Booking> queue;
 
 };
