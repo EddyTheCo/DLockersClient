@@ -13,15 +13,7 @@ Book_Client::ConState Book_Client::state_=Book_Client::Disconnected;
 Book_Client::Book_Client(QObject *parent):QObject(parent),topay_(0)
 {
     QObject::connect(this,&Book_Client::server_idChanged,this,&Book_Client::monitor_state);
-    connect(this,&Book_Client::stateChanged,reciever,[=](){
-        if(state_==Connected)
-        {
-            while (!queue.empty()&&state_==Connected) {
-                send_booking(queue.front());
-                queue.pop();
-            }
-        }
-    });
+
 }
 
 void Book_Client::check_state_output(const Node_output& node_output_)
@@ -74,6 +66,14 @@ void Book_Client::monitor_state(void)
             if(reciever)reciever->deleteLater();
             reciever=new QObject(this);
 
+            connect(this,&Book_Client::stateChanged,reciever,[=](){
+
+                while (!queue.empty()&&state_==Connected) {
+                    send_booking(queue.front());
+                    queue.pop();
+                }
+
+            });
             auto info=Node_Conection::rest_client->get_api_core_v2_info();
             QObject::connect(info,&Node_info::finished,reciever,[=]( ){
 
@@ -125,92 +125,100 @@ void Book_Client::send_booking(Booking book)
 
             QObject::connect(node_outputs_,&Node_outputs::finished,this,[=]( ){
 
-                std::vector<Node_output> outs_=node_outputs_expired_->outs_;
-                std::move(node_outputs_->outs_.begin(),node_outputs_->outs_.end(), std::back_inserter(outs_));
-                auto payment_bundle=Account::get_addr({0,0,0});
-
-
-                auto metFea=std::shared_ptr<qblocks::Feature>(new Metadata_Feature(metadata_));
-
-                auto price=book.calculate_price(price_per_hour_);
-
-                auto retAddr=std::shared_ptr<Address>(new Ed25519_Address(payment_bundle.get_hash()));
-                auto sendFea=std::shared_ptr<qblocks::Feature>(new Sender_Feature(retAddr));
-
-                auto var_storageaddrUnlcon=std::shared_ptr<qblocks::Unlock_Condition>(
-                            new Storage_Deposit_Return_Unlock_Condition(retAddr,0));
-
-                auto until_when=QDateTime::currentDateTime().addSecs(5*60).toSecsSinceEpoch();
-                QTimer::singleShot(450000, this, &Book_Client::check_if_expired);
-                auto expirationUnlock=std::shared_ptr<qblocks::Unlock_Condition>
-                        (new Expiration_Unlock_Condition(until_when,retAddr));
-                auto pay_to_address=std::shared_ptr<Address>(new Ed25519_Address(paytoaddrhash_));
-
-
-                auto pay_toaddrUnlcon=std::shared_ptr<qblocks::Unlock_Condition>(new Address_Unlock_Condition(pay_to_address));
-
-                auto min_deposit_pay_to= Basic_Output(0,{pay_toaddrUnlcon,var_storageaddrUnlcon,expirationUnlock},{sendFea,metFea},{})
-                        .min_deposit_of_output(info->vByteFactorKey,info->vByteFactorData,info->vByteCost);
-
-                c_array Inputs_Commitments;
-                quint64 amount=0;
-                std::vector<std::shared_ptr<qblocks::Output>> ret_outputs;
-                std::vector<std::shared_ptr<qblocks::Input>> inputs;
-
-                payment_bundle.consume_outputs(outs_,price+min_deposit_pay_to,Inputs_Commitments,amount,
-                                               ret_outputs,inputs);
-
-                if(amount>=price+min_deposit_pay_to)
+                if(state_==Connected)
                 {
+                    std::vector<Node_output> outs_=node_outputs_expired_->outs_;
+                    std::move(node_outputs_->outs_.begin(),node_outputs_->outs_.end(), std::back_inserter(outs_));
+                    auto payment_bundle=Account::get_addr({0,0,0});
 
-                    auto storageaddrUnlcon=std::shared_ptr<qblocks::Unlock_Condition>(
-                                new Storage_Deposit_Return_Unlock_Condition(retAddr,amount-price));
-                    auto Inputs_Commitment=c_array(QCryptographicHash::hash(Inputs_Commitments, QCryptographicHash::Blake2b_256));
-                    auto BaOut= std::shared_ptr<qblocks::Output>
-                            (new Basic_Output(amount,{pay_toaddrUnlcon,storageaddrUnlcon,expirationUnlock},{sendFea,metFea},{}));
 
-                    ret_outputs.push_back(BaOut);
-                    auto essence=std::shared_ptr<qblocks::Essence>
-                            (new Transaction_Essence(info->network_id_,inputs,Inputs_Commitment,ret_outputs,nullptr));
+                    auto metFea=std::shared_ptr<qblocks::Feature>(new Metadata_Feature(metadata_));
 
-                    c_array serializedEssence;
-                    serializedEssence.from_object<Essence>(*essence);
+                    auto price=book.calculate_price(price_per_hour_);
 
-                    auto essence_hash=QCryptographicHash::hash(serializedEssence, QCryptographicHash::Blake2b_256);
-                    std::vector<std::shared_ptr<qblocks::Unlock>> unlocks;
-                    payment_bundle.create_unlocks<qblocks::Reference_Unlock>(essence_hash,unlocks);
+                    auto retAddr=std::shared_ptr<Address>(new Ed25519_Address(payment_bundle.get_hash()));
+                    auto sendFea=std::shared_ptr<qblocks::Feature>(new Sender_Feature(retAddr));
 
-                    auto trpay=std::shared_ptr<qblocks::Payload>(new Transaction_Payload(essence,unlocks));
+                    auto var_storageaddrUnlcon=std::shared_ptr<qblocks::Unlock_Condition>(
+                                new Storage_Deposit_Return_Unlock_Condition(retAddr,0));
 
-                    auto block_=Block(trpay);
-                    auto resp=Node_Conection::mqtt_client->
-                            get_outputs_unlock_condition_address("address/"+qencoding::qbech32::Iota::encode(info->bech32Hrp,pay_to_address->addr()));
-                    QObject::connect(resp,&ResponseMqtt::returned,reciever,[=](QJsonValue data){
-                        const auto node_output_=Node_output(data);
-                        if(node_output_.output()->type_m==qblocks::Output::Basic_typ)
-                        {
-                            const auto basic_output_=std::dynamic_pointer_cast<qblocks::Basic_Output>(node_output_.output());
-                            const auto sendfea=basic_output_->get_feature_(qblocks::Feature::Sender_typ);
-                            if(sendfea&&std::dynamic_pointer_cast<qblocks::Sender_Feature>(sendfea)->sender()->addr()==
-                                    Account::get_addr({0,0,0}).get_address<qblocks::Address::Ed25519_typ>())
+                    auto until_when=QDateTime::currentDateTime().addSecs(5*60).toSecsSinceEpoch();
+                    QTimer::singleShot(450000, this, &Book_Client::check_if_expired);
+                    auto expirationUnlock=std::shared_ptr<qblocks::Unlock_Condition>
+                            (new Expiration_Unlock_Condition(until_when,retAddr));
+                    auto pay_to_address=std::shared_ptr<Address>(new Ed25519_Address(paytoaddrhash_));
+
+
+                    auto pay_toaddrUnlcon=std::shared_ptr<qblocks::Unlock_Condition>(new Address_Unlock_Condition(pay_to_address));
+
+                    auto min_deposit_pay_to= Basic_Output(0,{pay_toaddrUnlcon,var_storageaddrUnlcon,expirationUnlock},{sendFea,metFea},{})
+                            .min_deposit_of_output(info->vByteFactorKey,info->vByteFactorData,info->vByteCost);
+
+                    c_array Inputs_Commitments;
+                    quint64 amount=0;
+                    std::vector<std::shared_ptr<qblocks::Output>> ret_outputs;
+                    std::vector<std::shared_ptr<qblocks::Input>> inputs;
+
+                    payment_bundle.consume_outputs(outs_,price+min_deposit_pay_to,Inputs_Commitments,amount,
+                                                   ret_outputs,inputs);
+
+                    if(amount>=price+min_deposit_pay_to)
+                    {
+
+                        auto storageaddrUnlcon=std::shared_ptr<qblocks::Unlock_Condition>(
+                                    new Storage_Deposit_Return_Unlock_Condition(retAddr,amount-price));
+                        auto Inputs_Commitment=c_array(QCryptographicHash::hash(Inputs_Commitments, QCryptographicHash::Blake2b_256));
+                        auto BaOut= std::shared_ptr<qblocks::Output>
+                                (new Basic_Output(amount,{pay_toaddrUnlcon,storageaddrUnlcon,expirationUnlock},{sendFea,metFea},{}));
+
+                        ret_outputs.push_back(BaOut);
+                        auto essence=std::shared_ptr<qblocks::Essence>
+                                (new Transaction_Essence(info->network_id_,inputs,Inputs_Commitment,ret_outputs,nullptr));
+
+                        c_array serializedEssence;
+                        serializedEssence.from_object<Essence>(*essence);
+
+                        auto essence_hash=QCryptographicHash::hash(serializedEssence, QCryptographicHash::Blake2b_256);
+                        std::vector<std::shared_ptr<qblocks::Unlock>> unlocks;
+                        payment_bundle.create_unlocks<qblocks::Reference_Unlock>(essence_hash,unlocks);
+
+                        auto trpay=std::shared_ptr<qblocks::Payload>(new Transaction_Payload(essence,unlocks));
+
+                        auto block_=Block(trpay);
+                        auto resp=Node_Conection::mqtt_client->
+                                get_outputs_unlock_condition_address("address/"+qencoding::qbech32::Iota::encode(info->bech32Hrp,pay_to_address->addr()));
+                        QObject::connect(resp,&ResponseMqtt::returned,reciever,[=](QJsonValue data){
+                            const auto node_output_=Node_output(data);
+                            if(node_output_.output()->type_m==qblocks::Output::Basic_typ)
                             {
-                                set_state(Connected);
-                                resp->deleteLater();
+                                const auto basic_output_=std::dynamic_pointer_cast<qblocks::Basic_Output>(node_output_.output());
+                                const auto sendfea=basic_output_->get_feature_(qblocks::Feature::Sender_typ);
+                                if(sendfea&&std::dynamic_pointer_cast<qblocks::Sender_Feature>(sendfea)->sender()->addr()==
+                                        Account::get_addr({0,0,0}).get_address<qblocks::Address::Ed25519_typ>())
+                                {
+                                    set_state(Connected);
+                                    resp->deleteLater();
+                                }
                             }
-                        }
 
-                    });
-                    QTimer::singleShot(60000,resp,[=](){this->set_state(Connected); resp->deleteLater();});
-                    set_state(Sending);
-                    Node_Conection::rest_client->send_block(block_);
-                    books_.push_back(book);
-                    emit sent_book(book);
-                    set_to_pay(0);
+                        });
+                        QTimer::singleShot(60000,resp,[=](){this->set_state(Connected); resp->deleteLater();});
+                        set_state(Sending);
+                        Node_Conection::rest_client->send_block(block_);
+                        books_.push_back(book);
+                        emit sent_book(book);
+                        set_to_pay(0);
+                    }
+                    else
+                    {
+                        set_to_pay(topay_+price+min_deposit_pay_to-amount);
+                    }
                 }
                 else
                 {
-                    set_to_pay(topay_+price+min_deposit_pay_to-amount);
+                    queue.push(book);
                 }
+
                 info->deleteLater();
                 node_outputs_->deleteLater();
                 node_outputs_expired_->deleteLater();
@@ -228,14 +236,7 @@ void Book_Client::try_to_book(const std::vector<Booking>& books)
     set_to_pay(0);
     for(const auto& book:books)
     {
-        if(state_==Connected)
-        {
-            send_booking(book);
-        }
-        else
-        {
-            queue.push(book);
-        }
+        send_booking(book);
     }
 
 
