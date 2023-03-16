@@ -8,8 +8,7 @@ import MyDesigns
 ColumnLayout
 {
     id: ep
-    required property  StackView stack
-    required property int headh
+
     spacing:0
 
     Connections {
@@ -22,10 +21,10 @@ ColumnLayout
                 payserver.url_="firefly:v1/wallet/send?recipient="+payserver.addr_+"&amount="+Book_Client.topay
                 payserver.visible=true;
             }
-	else
-{
-payserver.visible=false;
-}
+            else
+            {
+                payserver.visible=false;
+            }
         }
         function onStateChanged() {
             if(Book_Client.state===Book_Client.Connected&&!Book_Client.topay)
@@ -52,65 +51,46 @@ payserver.visible=false;
         }
 
     }
-    Head
+
+
+    MyLabel
     {
-        id:head
-        Layout.preferredHeight:ep.headh
-        Layout.maximumHeight: ep.headh
-        Layout.minimumHeight: 100
-        Layout.fillHeight:  true
-        Layout.minimumWidth: 300
-        Layout.fillWidth: true
-        Layout.alignment: Qt.AlignTop
-        butt.text:"Back"
-        butt.onClicked:ep.stack.pop()
+        text: qsTr("Set pin")
+        Layout.alignment: Qt.AlignCenter
+        font.pointSize: 16
     }
-
-
-    Rectangle
-    {
-        id:center_
-        color:"#0f171e"
+    TextInput {
+        id:numbers_
+        Layout.maximumHeight: 200
         Layout.fillHeight:  true
-        Layout.minimumWidth: 300
+        Layout.maximumWidth: 300
         Layout.fillWidth: true
-        Layout.alignment: Qt.AlignTop
-
-
-        ColumnLayout
+        Layout.alignment: Qt.AlignCenter
+        font.letterSpacing :20
+        font.pointSize: 28
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        color:"white"
+        inputMask: "99999"
+        text: "12345"
+    }
+    MyButton
+    {
+        Layout.maximumWidth: 150
+        Layout.maximumHeight: 50
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        Layout.alignment: Qt.AlignCenter
+        text: "Book"
+        enabled: Book_Client.state===Book_Client.Connected
+        onClicked:
         {
-            spacing:20
-            anchors.fill: parent
-            MyPinBox
-            {
-                id:pin_box_
-
-                Layout.maximumHeight: 200
-                Layout.fillHeight:  true
-                Layout.maximumWidth: 300
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignCenter
-
-                description:qsTr("Set pin:")
-            }
-            MyButton
-            {
-                Layout.maximumWidth: 150
-                Layout.maximumHeight: 50
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.alignment: Qt.AlignCenter
-                text: "Book"
-                enabled: Book_Client.state===Book_Client.Connected
-                onClicked:
-                {
-                    Book_Client.code_str=pin_box_.pin.text;
-                    Day_model.get_new_bookings();
-                }
-            }
+            Book_Client.code_str=numbers_.text;
+            Day_model.get_new_bookings();
 
         }
-
     }
 
 }
+
+
