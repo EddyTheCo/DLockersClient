@@ -3,19 +3,19 @@
 
 ## Proof of Concept on implementing decentralized applications on the IOTA network.
 
-This application can be seen as a decentralized client that allows you to book a [locker]  by paying with Shimmer.
+This application can be seen as a decentralized client that allows you to book a locker  by paying with Shimmer.
+In order to use the application one needs to set the address of the node to connect.
+The Proof of Work has to be performed by the node (by setting the JWT for protected routes, by enabling PoW in the node...).
+In principle it will also work for the shimmer mainnet(or private network) by setting the node to a mainnet one(I have not tried).
+This application is meant to be used on the testnet.
+If using the mainnet **you are the ONLY responsible for the eventual loss of your funds**.
 
-
-The application is set to use the Shimmer Testnet
-and custom libraries developed by me.
-For sending a block to the network the application needs to perform Proof of Work.
-My implementation of proof of work it is not optimized and this will take much time on the browser, please be patient 
-or do a pull request to this [repo](https://github.com/EddyTheCo/Qpow-IOTA) with a faster implementation.
+## How to use it
 
 In order to book a locker the client needs to 'connect' to a [server](https://eddytheco.github.io/DLockersServer/wasm/).
-For that one enters the server id. 
+For that one sets the server id at the initial window. 
 
-One selects the day and hours of the booking(only the first contiguous-selected hours will be considered as a booking).
+One selects the day and hours of the booking.
 
 The client will ask you to set the pin need it to open the locker on the server.
 For the propose of this proof of concept  the  pin is a number of 5 digits but in real applications the pin should be a
@@ -31,4 +31,3 @@ This proof of concept uses a random seed for the address creation(if reload the 
 
 The client is not intended to 'store funds' it is only and interface between the wallet and the server.
 
-**This has only be tested on the Firefox browser**
