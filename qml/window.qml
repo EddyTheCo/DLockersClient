@@ -12,6 +12,7 @@ ApplicationWindow {
     visible: true
 
 
+
     Connections {
         target: Node_Conection
         function onStateChanged() {
@@ -110,70 +111,58 @@ ApplicationWindow {
         }
 
     }
-
-
-    StackView {
-        id: stack_
-        initialItem: initial
-        anchors.fill: parent
-    }
-
-    Component
+    ColumnLayout
     {
-        id:initial
-
-        ColumnLayout
+        id:column
+        spacing: 0
+        anchors.fill:parent
+        Head
         {
-            id:column
-            spacing: 0
-            Head
+            id:head
+            property bool init:true
+            Layout.maximumHeight: 300
+            Layout.minimumHeight: 100
+            Layout.fillHeight:  true
+            Layout.minimumWidth: 300
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
+            butt.text:(init)?"Book":"back"
+
+            butt.enabled:(init&&Day_model.total_selected&&Book_Client.state)||!init
+
+            butt.onClicked:
             {
-                id:head
-                Layout.maximumHeight: 300
-                Layout.minimumHeight: 100
-                Layout.fillHeight:  true
-                Layout.minimumWidth: 300
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignTop
-                butt.text:"Book"
-                butt.enabled:Day_model.total_selected&&Book_Client.state
-
-                butt.onClicked:
-                {
-                    var component = Qt.createComponent("Enter_Pin_client.qml");
-                    if (component.status === Component.Ready) {
-                        var next = component.createObject(column, {stack:stack_,headh:head.height});
-                        if (next === null) {
-                            console.log("Error creating object");
-                        }
-                    } else if (component.status === Component.Error) {
-                        console.log("Error loading component:", component.errorString());
-                    }
-                    stack_.push(next)
-                }
+                head.init=!head.init
             }
+        }
 
-            Rectangle
+        Rectangle
+        {
+            id:bott
+            color:"#0f171e"
+            Layout.minimumHeight: 300
+            Layout.preferredHeight: 400
+            Layout.fillHeight:  true
+            Layout.minimumWidth: 200
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
+            Day_swipe_view {
+                id: dayview
+                clip:true
+                can_book:true
+                anchors.fill:parent
+                visible:head.init
+            }
+            Enter_Pin_client
             {
-                id:bott
-                color:"#0f171e"
-                Layout.minimumHeight: 500
-                Layout.fillHeight:  true
-                Layout.minimumWidth: 300
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignTop
-                Day_swipe_view {
-                    id: dayview
-                    clip:true
-                    can_book:true
-                    anchors.fill:parent
-                }
+                visible:!head.init
+                anchors.fill:parent
             }
-
         }
 
     }
 
-
 }
+
+
 
