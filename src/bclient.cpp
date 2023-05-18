@@ -448,25 +448,21 @@ void Book_Client::sendNft(Node_output out,c_array address)
 
                     bundle.consume_outputs(outs_,nftOut->amount_);
 
+                    qDebug()<<"nftOut->amount_:"<<nftOut->amount_;
+                    qDebug()<<"bundle.amount:"<<bundle.amount;
                     if(bundle.amount>=nftOut->amount_)
                     {
                         auto BaOut=Output::Basic(0,{retUnlock},bundle.get_tokens());
-                        if(bundle.amount>nftOut->amount_)
+                        auto min_deposit=Client::get_deposit(BaOut,info);
+                        if(bundle.amount>=nftOut->amount_+min_deposit)
                         {
-                            auto min_deposit=Client::get_deposit(BaOut,info);
-                            if(min_deposit>bundle.amount-nftOut->amount_)
-                            {
-                                bundle.consume_outputs(outs_
-                                                       ,min_deposit-(bundle.amount-nftOut->amount_));
-                                BaOut->native_tokens_=bundle.get_tokens();
-                                min_deposit=Client::get_deposit(BaOut,info);
-                                if(bundle.amount>=min_deposit+nftOut->amount_)BaOut->amount_=bundle.amount-nftOut->amount_;
-                            }
-                            else
-                            {
-                                BaOut->amount_=bundle.amount-nftOut->amount_;
-                            }
 
+                            BaOut->amount_=bundle.amount-nftOut->amount_;
+
+                        }
+                        else
+                        {
+                            nftOut->amount_=bundle.amount;
                         }
                         pvector<const Output> the_outputs_{nftOut};
                         if(BaOut->amount_)the_outputs_.push_back(BaOut);
