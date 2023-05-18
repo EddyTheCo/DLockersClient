@@ -148,10 +148,11 @@ void Book_Client::monitor_state(void)
         total_funds.clear();
         auto info=Node_Conection::rest_client->get_api_core_v2_info();
         QObject::connect(info,&Node_info::finished,reciever,[=]( ){
+            setClientId(Account::addr_bech32({0,0,0},info->bech32Hrp));
             if(!server_id_.isNull())
             {
 
-                setClientId(Account::addr_bech32({0,0,0},info->bech32Hrp));
+
                 auto node_outputs_=new Node_outputs();
                 const auto serverAddress=qencoding::qbech32::Iota::encode(info->bech32Hrp,server_id_);
                 QObject::connect(node_outputs_,&Node_outputs::finished,reciever,[=]( ){
