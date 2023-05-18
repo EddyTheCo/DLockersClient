@@ -83,10 +83,10 @@ ApplicationWindow {
                 color:CustomStyle.backColor2
                 radius:Math.min(width,height)*0.05
                 Layout.minimumWidth: 100
-                Layout.maximumHeight: (Node_Conection.state)?200:100
+                Layout.maximumHeight: (Node_Conection.state)?150:100
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.minimumHeight: (Node_Conection.state)? 120:50
+                Layout.minimumHeight: (Node_Conection.state)? 100:50
                 Layout.alignment: Qt.AlignHCenter|Qt.AlignTop
                 Layout.margins: 20
                 border.color:CustomStyle.midColor1
@@ -134,6 +134,21 @@ ApplicationWindow {
                 }
 
             }
+            MyTextField
+            {
+                id:serverid
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.alignment: Qt.AlignCenter
+                Layout.maximumHeight: 70
+                Layout.minimumHeight: 50
+                label.text: "Set the server id:"
+                textfield.placeholderText:(Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1...(mandatory)":""
+                textfield.onTextEdited: {
+                    Book_Client.server_id=serverid.textfield.text
+                }
+                Layout.margins: 5
+            }
             Node_Connections
             {
                 id:conn_
@@ -147,22 +162,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.minimumHeight: 30
             }
-            MyTextField
-            {
-                id:serverid
 
-
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.alignment: Qt.AlignCenter
-                Layout.maximumHeight: 70
-                label.text: "Set the server id:"
-                textfield.placeholderText:(Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1...(mandatory)":""
-                textfield.onTextEdited: {
-                    Book_Client.server_id=serverid.textfield.text
-                }
-                Layout.margins: 5
-            }
 
         }
 
