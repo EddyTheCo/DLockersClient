@@ -10,12 +10,28 @@ import MyDesigns
 
 ApplicationWindow {
     visible: true
+    id:window
 
-
+    background: Rectangle
+    {
+        color:CustomStyle.backColor1
+    }
+    Notification
+    {
+        id:noti
+        width:300
+        height:100
+        x:(window.width-width)*0.5
+        y: window.height*(1-0.05)-height
+    }
 
     Connections {
         target: Node_Conection
         function onStateChanged() {
+            if(Node_Conection.state==Node_Conection.Connected)
+            {
+                noti.show({"message":"Conected to "+ Node_Conection.nodeaddr });
+            }
             Book_Client.restart();
         }
     }
@@ -28,86 +44,126 @@ ApplicationWindow {
     Connections {
         target: Day_model
         function onHasnewbooks(boo) {
-            Book_Client.try_to_book(boo);
+            Book_Client.send_booking(boo);
         }
     }
     Connections {
         target: Book_Client
-        function onSent_book(boo) {
-            Day_model.add_booking(boo,true);
+        function onSent_book(books,id) {
+            Day_model.add_booking(books,id);
         }
-        function onGot_new_booking(boo) {
-            Day_model.add_booking(boo,false);
+        function onGot_new_booking(books) {
+            Day_model.add_booking(books);
         }
-        function onRemoved_expired(boo) {
-            Day_model.remove_sent_booking(boo);
+        function onRemoved_expired(outid) {
+            Day_model.remove_sent_booking(outid);
+        }
+        function onNotEnought(amount) {
+            noti.show({"message":"Not enough funds\n "+ "lack of "+ amount.largeValue.value + " "+ amount.largeValue.unit });
         }
     }
-    Popup {
+    Drawer {
         id:settings
-        anchors.centerIn: Overlay.overlay
-        visible:true
-        closePolicy: Popup.NoAutoClose
-        background:Rectangle
+        width:300
+
+        height:parent.height
+        focus:true
+        modal:true
+
+
+        background: Rectangle
         {
-            color:"#0f171e"
-            border.width: 1
-            border.color: "white"
-            radius:8
+            color:CustomStyle.backColor1
         }
         ColumnLayout
         {
             anchors.fill:parent
-            Node_Connections
+            Rectangle
             {
-                id:nodeco
+                color:CustomStyle.backColor2
+                radius:Math.min(width,height)*0.05
+                Layout.minimumWidth: 100
+                Layout.maximumHeight: (Node_Conection.state)?200:100
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.alignment: Qt.AlignCenter
-                Layout.preferredWidth: 350
-                Layout.preferredHeight: 250
+                Layout.minimumHeight: (Node_Conection.state)? 120:50
+                Layout.alignment: Qt.AlignHCenter|Qt.AlignTop
+                Layout.margins: 20
+                border.color:CustomStyle.midColor1
+                border.width: 1
+                ColumnLayout
+                {
+                    anchors.fill:parent
+                    TextAddress
+                    {
+                        visible:Node_Conection.state
+                        description:qsTr("<b>Client id</b>")
+                        address:Book_Client.clientId
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        Layout.alignment: Qt.AlignTop
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: 30
+                        Layout.margins: 5
+                    }
+                    Text
+                    {
+                        font:(Node_Conection.state)?CustomStyle.h3:CustomStyle.h2
+                        text:(Node_Conection.state)?qsTr("Available Balance: "):qsTr("Waiting for node")
+                        horizontalAlignment:Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        color: CustomStyle.frontColor1
+                        fontSizeMode:Text.Fit
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.fillHeight: true
+                    }
+                    AmountText
+                    {
+                        visible:Node_Conection.state
+                        font:CustomStyle.h2
+                        jsob:Book_Client.funds
+                        horizontalAlignment:Text.AlignHCenter
+                        fontSizeMode:Text.Fit
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.fillHeight: true
+                    }
+
+                }
+
+            }
+            Node_Connections
+            {
+                id:conn_
+                Layout.fillWidth: true
+                Layout.minimumHeight: 30
+                collapsed:1.0
             }
             AccountQml
             {
+                id:acc_
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.maximumHeight: 500
-                Layout.alignment: Qt.AlignCenter
-                Layout.preferredHeight: 300
-                Layout.preferredWidth:nodeco.width
+                Layout.minimumHeight: 30
             }
             MyTextField
             {
                 id:serverid
 
-                Layout.minimumHeight: 75
-                Layout.preferredWidth:nodeco.width
+
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.alignment: Qt.AlignCenter
-                desc:"Set the server id:"
-                placeholderText:(Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1...(mandatory)":""
-                tfield.onTextEdited: {
-                    Book_Client.server_id=serverid.tfield.text
+                Layout.maximumHeight: 70
+                label.text: "Set the server id:"
+                textfield.placeholderText:(Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1...(mandatory)":""
+                textfield.onTextEdited: {
+                    Book_Client.server_id=serverid.textfield.text
                 }
+                Layout.margins: 5
             }
-            MyButton
-            {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.maximumHeight: 50
-                Layout.maximumWidth: 75
-                Layout.preferredWidth: 50
-                Layout.minimumHeight: 25
-                Layout.minimumWidth:50
-                Layout.alignment: Qt.AlignHCenter
-                text:qsTr("Start")
-                enabled: Node_Conection.state&&Book_Client.state
 
-                onClicked:{
-                    settings.close();
-                }
-            }
         }
 
     }
@@ -119,46 +175,112 @@ ApplicationWindow {
         Head
         {
             id:head
-            property bool init:true
-            Layout.maximumHeight: 300
+
+            Layout.maximumHeight: 200
             Layout.minimumHeight: 100
-            Layout.fillHeight:  true
             Layout.minimumWidth: 300
             Layout.fillWidth: true
+            Layout.fillHeight: true
             Layout.alignment: Qt.AlignTop
-            butt.text:(init)?"Book":"back"
+            butt1.text:qsTr("Book")
 
-            butt.enabled:(init&&Day_model.total_selected&&Book_Client.state)||!init
+            butt1.enabled:Day_model.total_selected&&Book_Client.state==Book_Client.Connected
 
-            butt.onClicked:
+            butt1.onClicked:
             {
-                head.init=!head.init
+                Day_model.get_new_bookings();
+
+                Book_Client.state=Book_Client.Sending
+            }
+
+            butt2.text:qsTr("Open")
+
+            butt2.enabled:Book_Client.state==Book_Client.Connected
+
+            butt2.onClicked:
+            {
+                popup_.open()
+            }
+            Popup
+            {
+                id:popup_
+                visible:false
+                closePolicy: Popup.CloseOnPressOutside
+                width:350
+                height:200
+                anchors.centerIn: Overlay.overlay
+
+                background: Rectangle
+                {
+                    id:bck
+                    color:CustomStyle.backColor1
+                    border.width:1
+                    border.color:CustomStyle.frontColor1
+                    radius:Math.min(width,height)*0.07
+
+                }
+                ColumnLayout
+                {
+                    anchors.fill: parent
+                    MyTextField
+                    {
+                        id:recaddress
+                        label.text: qsTr("Present the nft to:")
+                        textfield.placeholderText: (Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1":""
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.margins:  10
+                        Layout.fillWidth: true
+                        Layout.minimumHeight: 75
+                        focus:true
+                    }
+                    MyButton
+                    {
+                        id:send
+                        Layout.alignment: Qt.AlignRight
+                        Layout.margins:  15
+                        Layout.fillHeight: true
+                        Layout.maximumHeight:  50
+                        Layout.fillWidth: true
+                        Layout.maximumWidth: 2*height
+
+                        onClicked:
+                        {
+                            popup_.close()
+                            Book_Client.presentNft(recaddress.textfield.text)
+                        }
+                        text:qsTr("Ok")
+                    }
+
+                }
             }
         }
 
-        Rectangle
-        {
-            id:bott
-            color:"#0f171e"
-            Layout.minimumHeight: 300
-            Layout.preferredHeight: 400
-            Layout.fillHeight:  true
-            Layout.minimumWidth: 200
+
+        Day_swipe_view {
+            id: dayview
+            clip:true
+            can_book:true
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
-            Day_swipe_view {
-                id: dayview
-                clip:true
-                can_book:true
-                anchors.fill:parent
-                visible:head.init
-            }
-            Enter_Pin_client
-            {
-                visible:!head.init
-                anchors.fill:parent
-            }
+            Layout.fillHeight:  true
+            Layout.minimumWidth: 300
+            Layout.maximumWidth: 700
+            Layout.alignment: Qt.AlignTop|Qt.AlignHCenter
         }
+
+    }
+
+    MySettButton
+    {
+        id:seetbutt
+        width: 40 + ((window.width>400)?10:0) + ((window.width>800)?20:0)
+        x:settings.width*settings.position
+        y:(window.height-height)*0.5
+        height:width
+        onClicked:
+        {
+            settings.open()
+        }
+        animate: settings.position>0.1
 
     }
 
