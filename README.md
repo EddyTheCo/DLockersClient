@@ -1,4 +1,4 @@
-# [DLockers Client](https://eddytheco.github.io/DLockersClient/wasm/)
+# [DLockers Client](https://eddytheco.github.io/DLockersClient/)
 
 
 ## Proof of Concept on implementing decentralized applications on the IOTA network.
@@ -12,7 +12,7 @@ If using the mainnet **you are the ONLY responsible for the eventual loss of you
 
 ## How to use it
 
-In order to book a locker the client needs to 'connect' to a [server](https://eddytheco.github.io/DLockersServer/wasm/).
+In order to book a locker the client needs to 'connect' to a [server](https://eddytheco.github.io/DLockersServer/).
 For that one sets the server id at the settings window. 
 
 One selects the day and hours of the booking and press book.
