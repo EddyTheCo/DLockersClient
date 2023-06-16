@@ -11,6 +11,27 @@ import MyDesigns
 ApplicationWindow {
     visible: true
     id:window
+    FontLoader {
+            id: webFont
+            source: "qrc:/esterVtech.com/imports/client/qml/fonts/DeliciousHandrawn-Regular.ttf"
+        }
+    Component.onCompleted:
+    {
+        Node_Conection.nodeaddr="https://3216aae.online-server.cloud"
+        Node_Conection.jwt="NODE_JWT"
+
+        CustomStyle.h1=Qt.font({
+                                   family: webFont.font.family,
+                                   weight: webFont.font.weight,
+                                   pixelSize: 28
+                               });
+        CustomStyle.h2=Qt.font({
+                                   family: webFont.font.family,
+                                   weight: webFont.font.weight,
+                                   pixelSize: 28
+                               });
+    }
+
 
     background: Rectangle
     {
@@ -154,7 +175,6 @@ ApplicationWindow {
                 id:conn_
                 Layout.fillWidth: true
                 Layout.minimumHeight: 30
-                collapsed:1.0
             }
             AccountQml
             {
@@ -272,7 +292,7 @@ ApplicationWindow {
     MySettButton
     {
         id:seetbutt
-        width: 40 + ((window.width>400)?10:0) + ((window.width>800)?20:0)
+        width: 40 
         x:settings.width*settings.position
         y:(window.height-height)*0.5
         height:width
