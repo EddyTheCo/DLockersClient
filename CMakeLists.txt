@@ -124,6 +124,7 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/
 	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/DLockers
 	)
 if(EMSCRIPTEN)
+	prepare_wasm_folder()
 	add_custom_command(
 		TARGET client_main
 		POST_BUILD
