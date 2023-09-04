@@ -94,6 +94,7 @@ qt6_add_qml_module(client_main
     qml/window.qml
     qml/Enter_Pin_client.qml
     qml/Head.qml
+    qml/LocalConf.qml
     RESOURCE_PREFIX
     "/esterVtech.com/imports"
     IMPORTS MyDesigns nodeConection account booking_model
