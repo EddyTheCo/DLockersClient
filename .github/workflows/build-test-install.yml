@@ -15,7 +15,7 @@ jobs:
         sharedLib: [true]
         useThread: [true,false]
 
-    uses: EddyTheCo/Common/.github/workflows/build-test-install.yml@main
+    uses: EddyTheCo/Common/.github/workflows/build-test-install.yml@develop
     permissions:
       contents: write
     with:
@@ -25,6 +25,7 @@ jobs:
       qtModules: 'qtwebsockets qtshadertools' 
       test: false
       qtVersion: '6.6.0'
+      useOpenCV: true  
     secrets:
       NODE_JWT: ${{ secrets.NODE_JWT }}
   release:
