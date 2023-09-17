@@ -4,7 +4,7 @@ if(NODE_JWT)
     file(WRITE qml/LocalConf.qml "pragma Singleton \n import QtQuick 2.15 \n QtObject { \n property string nodeaddr:\"https://3216aae.online-server.cloud\" \n property string jwt:\"${NODE_JWT}\"\n }" )
 endif(NODE_JWT)
 
-include(local_conf.cmake OPTIONAL)
+include(${CMAKE_CURRENT_BINARY_DIR}/local_conf.cmake OPTIONAL)
 
 
 include(FetchContent)
@@ -44,38 +44,38 @@ qt_standard_project_setup()
 FetchContent_Declare(
     qrCode
     GIT_REPOSITORY https://github.com/EddyTheCo/qrCode.git
-    GIT_TAG v0.0.1
-    FIND_PACKAGE_ARGS 0 CONFIG
+    GIT_TAG v0.1.1
+    FIND_PACKAGE_ARGS 0.1 CONFIG
 )
 FetchContent_MakeAvailable(qrCode)
 
 FetchContent_Declare(
     MyDesigns
     GIT_REPOSITORY https://github.com/EddyTheCo/MyDesigns.git
-    GIT_TAG v0.2.2
-    FIND_PACKAGE_ARGS 0 CONFIG
+    GIT_TAG v0.2.3
+    FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(MyDesigns)
 FetchContent_Declare(
     account
     GIT_REPOSITORY https://github.com/EddyTheCo/account.git
-    GIT_TAG v0.2.1
-    FIND_PACKAGE_ARGS 0 CONFIG
+    GIT_TAG v0.2.2
+    FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(account)
 FetchContent_Declare(
     nodeConection
     GIT_REPOSITORY https://github.com/EddyTheCo/ConectionSettings.git
-    GIT_TAG v0.2.2
-    FIND_PACKAGE_ARGS 0 CONFIG
+    GIT_TAG v0.2.3
+    FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(nodeConection)
 
 FetchContent_Declare(
     booking_model
     GIT_REPOSITORY https://github.com/EddyTheCo/Booking_model.git
-    GIT_TAG v0.1.1
-    FIND_PACKAGE_ARGS 0 CONFIG
+    GIT_TAG v0.1.3
+    FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(booking_model)
 
@@ -110,7 +110,7 @@ qt_add_resources(client_main "client_main.fonts"
 target_include_directories(client_main PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/DLockers>)
 
-target_link_libraries(client_main PRIVATE booking_model nodeConection account QtQrGen)
+target_link_libraries(client_main PRIVATE booking_model nodeConection account QtQrGen QtQrDec)
 target_link_libraries(client_main PRIVATE Qt::Core Qt::Gui Qt::Qml Qt::Quick)
 
 set_target_properties(client_main PROPERTIES
@@ -135,6 +135,7 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/
 )
 if(EMSCRIPTEN)
     prepare_wasm_folder()
+    target_compile_definitions(client_main PRIVATE USE_EMSCRIPTEN)
     add_custom_command(
         TARGET client_main
         POST_BUILD

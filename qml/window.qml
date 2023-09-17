@@ -7,14 +7,15 @@ import account
 import client
 import booking_model
 import MyDesigns
+import QtQrDec
 
 ApplicationWindow {
     visible: true
     id:window
     FontLoader {
-            id: webFont
-            source: "qrc:/esterVtech.com/imports/client/qml/fonts/DeliciousHandrawn-Regular.ttf"
-        }
+        id: webFont
+        source: "qrc:/esterVtech.com/imports/client/qml/fonts/DeliciousHandrawn-Regular.ttf"
+    }
     Component.onCompleted:
     {
         if(LocalConf.nodeaddr) Node_Conection.nodeaddr=LocalConf.nodeaddr;
@@ -91,7 +92,6 @@ ApplicationWindow {
         focus:true
         modal:true
 
-
         background: Rectangle
         {
             color:CustomStyle.backColor1
@@ -155,20 +155,18 @@ ApplicationWindow {
                 }
 
             }
-            MyTextField
+            MyButton
             {
                 id:serverid
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+
                 Layout.alignment: Qt.AlignCenter
-                Layout.maximumHeight: 70
-                Layout.minimumHeight: 50
-                label.text: "Set the server id:"
-                textfield.placeholderText:(Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1...(mandatory)":""
-                textfield.onTextEdited: {
-                    Book_Client.server_id=serverid.textfield.text
-                }
+                text: qsTr("Set the server")
                 Layout.margins: 5
+                onClicked:
+                {
+                    popup_.setServer=true;
+                    popup_.open();
+                }
             }
             Node_Connections
             {
@@ -204,7 +202,7 @@ ApplicationWindow {
             Layout.alignment: Qt.AlignTop
             butt1.text:qsTr("Book")
 
-            butt1.enabled:Day_model.total_selected&&Book_Client.state==Book_Client.Connected
+            butt1.enabled:Day_model.total_selected&&Book_Client.state===Book_Client.Connected
 
             butt1.onClicked:
             {
@@ -215,21 +213,27 @@ ApplicationWindow {
 
             butt2.text:qsTr("Open")
 
-            butt2.enabled:Book_Client.state==Book_Client.Connected
+            butt2.enabled:Book_Client.state===Book_Client.Connected
 
             butt2.onClicked:
             {
-                popup_.open()
+
+                popup_.setServer=false;
+                popup_.open();
+
             }
             Popup
             {
                 id:popup_
+                property bool setServer:true;
+
                 visible:false
                 closePolicy: Popup.CloseOnPressOutside
                 width:350
-                height:200
+                height:500
                 anchors.centerIn: Overlay.overlay
 
+                onClosed: qrscanner.stop();
                 background: Rectangle
                 {
                     id:bck
@@ -245,13 +249,25 @@ ApplicationWindow {
                     MyTextField
                     {
                         id:recaddress
-                        label.text: qsTr("Present the nft to:")
+                        label.text: (popup_.setServer)?qsTr("Set the server address:"):qsTr("Present the nft to:")
                         textfield.placeholderText: (Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1":""
                         Layout.alignment: Qt.AlignHCenter
                         Layout.margins:  10
                         Layout.fillWidth: true
                         Layout.minimumHeight: 75
                         focus:true
+                    }
+                    QrQmlCamera
+                    {
+                        id:qrscanner
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.margins:  0
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        onGotdata: (data)=> {
+                            qrscanner.stop();
+                            recaddress.textfield.text=data;
+                        }
                     }
                     MyButton
                     {
@@ -262,11 +278,18 @@ ApplicationWindow {
                         Layout.maximumHeight:  50
                         Layout.fillWidth: true
                         Layout.maximumWidth: 2*height
-
+                        enabled: recaddress.textfield.text!==""
                         onClicked:
                         {
                             popup_.close()
-                            Book_Client.presentNft(recaddress.textfield.text)
+                            if(popup_.setServer)
+                            {
+                                Book_Client.server_id=recaddress.textfield.text;
+                            }
+                            else
+                            {
+                                Book_Client.presentNft(recaddress.textfield.text);
+                            }
                         }
                         text:qsTr("Ok")
                     }
@@ -274,7 +297,6 @@ ApplicationWindow {
                 }
             }
         }
-
 
         Day_swipe_view {
             id: dayview
@@ -292,7 +314,7 @@ ApplicationWindow {
     MySettButton
     {
         id:seetbutt
-        width: 40 
+        width: 40
         x:settings.width*settings.position
         y:(window.height-height)*0.5
         height:width
