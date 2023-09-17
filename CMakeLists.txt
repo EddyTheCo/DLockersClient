@@ -44,8 +44,8 @@ qt_standard_project_setup()
 FetchContent_Declare(
     qrCode
     GIT_REPOSITORY https://github.com/EddyTheCo/qrCode.git
-    GIT_TAG fix_decode
-    FIND_PACKAGE_ARGS 0 CONFIG
+    GIT_TAG v0.1.1
+    FIND_PACKAGE_ARGS 0.1 CONFIG
 )
 FetchContent_MakeAvailable(qrCode)
 
@@ -53,21 +53,21 @@ FetchContent_Declare(
     MyDesigns
     GIT_REPOSITORY https://github.com/EddyTheCo/MyDesigns.git
     GIT_TAG v0.2.3
-    FIND_PACKAGE_ARGS 0 CONFIG
+    FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(MyDesigns)
 FetchContent_Declare(
     account
     GIT_REPOSITORY https://github.com/EddyTheCo/account.git
     GIT_TAG v0.2.2
-    FIND_PACKAGE_ARGS 0 CONFIG
+    FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(account)
 FetchContent_Declare(
     nodeConection
     GIT_REPOSITORY https://github.com/EddyTheCo/ConectionSettings.git
     GIT_TAG v0.2.3
-    FIND_PACKAGE_ARGS 0 CONFIG
+    FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(nodeConection)
 
@@ -75,7 +75,7 @@ FetchContent_Declare(
     booking_model
     GIT_REPOSITORY https://github.com/EddyTheCo/Booking_model.git
     GIT_TAG v0.1.3
-    FIND_PACKAGE_ARGS 0 CONFIG
+    FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(booking_model)
 
