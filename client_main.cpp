@@ -7,8 +7,9 @@
 int main(int argc, char *argv[])
 {
     auto foo=fooDesign::fooPrint(); //unused function to force linking
-    foo=fooBookingModel::fooPrint(); //unused function to force linking
-    foo=fooQtQrDec::fooPrint(); //unused function to force linking see https://forum.qt.io/topic/145975/qml-module-of-only-qml-files-do-not-link-to-application?_=1694679872016
+    foo=fooBookingModel::fooPrint();  //unused function to force linking see https://forum.qt.io/topic/145975/qml-module-of-only-qml-files-do-not-link-to-application?_=1694679872016
+    foo=fooQtQrDec::fooPrint(); //unused function to force linking
+    foo=fooQtQrGen::fooPrint(); //unused function to force linking
 
 	QGuiApplication app(argc, argv);
 
