@@ -8,6 +8,7 @@ import client
 import booking_model
 import MyDesigns
 import QtQrDec
+import QtQrGen
 
 ApplicationWindow {
     visible: true
@@ -115,7 +116,7 @@ ApplicationWindow {
                 ColumnLayout
                 {
                     anchors.fill:parent
-                    TextAddress
+                    QrLabel
                     {
                         visible:Node_Conection.state
                         description:qsTr("<b>Client id</b>")
@@ -222,78 +223,27 @@ ApplicationWindow {
                 popup_.open();
 
             }
-            Popup
+            QrTextArea
             {
                 id:popup_
                 property bool setServer:true;
-
                 visible:false
                 closePolicy: Popup.CloseOnPressOutside
-                width:350
-                height:500
+                width:300
+                height:425
                 anchors.centerIn: Overlay.overlay
 
-                onClosed: qrscanner.stop();
-                background: Rectangle
-                {
-                    id:bck
-                    color:CustomStyle.backColor1
-                    border.width:1
-                    border.color:CustomStyle.frontColor1
-                    radius:Math.min(width,height)*0.07
-
-                }
-                ColumnLayout
-                {
-                    anchors.fill: parent
-                    MyTextField
+                description: (popup_.setServer)?qsTr("Set the server address:"):qsTr("Present the nft to:")
+                placeholder: (Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1":""
+                onClicked: (data) => {
+                    if(popup_.setServer)
                     {
-                        id:recaddress
-                        label.text: (popup_.setServer)?qsTr("Set the server address:"):qsTr("Present the nft to:")
-                        textfield.placeholderText: (Node_Conection.state)?Node_Conection.info().protocol.bech32Hrp+"1":""
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.margins:  10
-                        Layout.fillWidth: true
-                        Layout.minimumHeight: 75
-                        focus:true
+                        Book_Client.server_id=data;
                     }
-                    QrQmlCamera
+                    else
                     {
-                        id:qrscanner
-                        Layout.alignment: Qt.AlignCenter
-                        Layout.margins:  0
-                        Layout.fillHeight: true
-                        Layout.fillWidth: true
-                        onGotdata: (data)=> {
-                            qrscanner.stop();
-                            recaddress.textfield.text=data;
-                        }
+                        Book_Client.presentNft(data);
                     }
-                    MyButton
-                    {
-                        id:send
-                        Layout.alignment: Qt.AlignRight
-                        Layout.margins:  15
-                        Layout.fillHeight: true
-                        Layout.maximumHeight:  50
-                        Layout.fillWidth: true
-                        Layout.maximumWidth: 2*height
-                        enabled: recaddress.textfield.text!==""
-                        onClicked:
-                        {
-                            popup_.close()
-                            if(popup_.setServer)
-                            {
-                                Book_Client.server_id=recaddress.textfield.text;
-                            }
-                            else
-                            {
-                                Book_Client.presentNft(recaddress.textfield.text);
-                            }
-                        }
-                        text:qsTr("Ok")
-                    }
-
                 }
             }
         }

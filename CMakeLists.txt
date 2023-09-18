@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-if(NODE_JWT)
-    file(WRITE qml/LocalConf.qml "pragma Singleton \n import QtQuick 2.15 \n QtObject { \n property string nodeaddr:\"https://3216aae.online-server.cloud\" \n property string jwt:\"${NODE_JWT}\"\n }" )
-endif(NODE_JWT)
 
 include(${CMAKE_CURRENT_BINARY_DIR}/local_conf.cmake OPTIONAL)
 
@@ -44,7 +41,7 @@ qt_standard_project_setup()
 FetchContent_Declare(
     qrCode
     GIT_REPOSITORY https://github.com/EddyTheCo/qrCode.git
-    GIT_TAG v0.1.1
+    GIT_TAG v0.1.2
     FIND_PACKAGE_ARGS 0.1 CONFIG
 )
 FetchContent_MakeAvailable(qrCode)
