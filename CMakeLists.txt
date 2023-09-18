@@ -94,7 +94,7 @@ qt6_add_qml_module(client_main
     qml/LocalConf.qml
     RESOURCE_PREFIX
     "/esterVtech.com/imports"
-    IMPORTS MyDesigns nodeConection account booking_model
+    IMPORTS MyDesigns nodeConection account booking_model QtQrGen QtQrDec 
     IMPORT_PATH ${QML_IMPORT_PATH}
 )
 
