@@ -35,43 +35,43 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml )
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml OPTIONAL_COMPONENTS Multimedia)
 
 qt_standard_project_setup()
 FetchContent_Declare(
     qrCode
     GIT_REPOSITORY https://github.com/EddyTheCo/qrCode.git
-    GIT_TAG v0.1.2
-    FIND_PACKAGE_ARGS 0.1 CONFIG
+    GIT_TAG v0.3.1
+    FIND_PACKAGE_ARGS 0.3 CONFIG
 )
 FetchContent_MakeAvailable(qrCode)
 
 FetchContent_Declare(
     MyDesigns
     GIT_REPOSITORY https://github.com/EddyTheCo/MyDesigns.git
-    GIT_TAG v0.2.3
-    FIND_PACKAGE_ARGS 0.2 CONFIG
+    GIT_TAG v0.3.1
+    FIND_PACKAGE_ARGS 0.3 CONFIG
 )
 FetchContent_MakeAvailable(MyDesigns)
 FetchContent_Declare(
     account
     GIT_REPOSITORY https://github.com/EddyTheCo/account.git
-    GIT_TAG v0.2.2
-    FIND_PACKAGE_ARGS 0.2 CONFIG
+    GIT_TAG v0.4.1
+    FIND_PACKAGE_ARGS 0.4 CONFIG
 )
 FetchContent_MakeAvailable(account)
 FetchContent_Declare(
     nodeConection
     GIT_REPOSITORY https://github.com/EddyTheCo/ConectionSettings.git
-    GIT_TAG v0.2.3
-    FIND_PACKAGE_ARGS 0.2 CONFIG
+    GIT_TAG v0.4.1
+    FIND_PACKAGE_ARGS 0.4 CONFIG
 )
 FetchContent_MakeAvailable(nodeConection)
 
 FetchContent_Declare(
     booking_model
     GIT_REPOSITORY https://github.com/EddyTheCo/Booking_model.git
-    GIT_TAG v0.1.3
+    GIT_TAG v0.2.1
     FIND_PACKAGE_ARGS 0.2 CONFIG
 )
 FetchContent_MakeAvailable(booking_model)
@@ -94,21 +94,23 @@ qt6_add_qml_module(client_main
     qml/LocalConf.qml
     RESOURCE_PREFIX
     "/esterVtech.com/imports"
-    IMPORTS MyDesigns nodeConection account booking_model QtQrGen QtQrDec 
-    IMPORT_PATH ${QML_IMPORT_PATH}
-)
-
-qt_add_resources(client_main "client_main.fonts"
-    PREFIX "/esterVtech.com/imports/client"
-    FILES
+    RESOURCES
     "qml/fonts/DeliciousHandrawn-Regular.ttf"
+    IMPORT_PATH ${CMAKE_BINARY_DIR}
 )
 
-target_include_directories(client_main PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/DLockers>)
+target_include_directories(client_main PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-target_link_libraries(client_main PRIVATE booking_model nodeConection account QtQrGen QtQrDec)
-target_link_libraries(client_main PRIVATE Qt::Core Qt::Gui Qt::Qml Qt::Quick)
+target_link_libraries(client_main PRIVATE Qt::Core Qt::Gui Qt::Qml Qt::Quick $<TARGET_NAME_IF_EXISTS:Qt6::Multimedia>)
+target_link_libraries(client_main PRIVATE booking_model nodeConection account QtQrGen QtQrDec MyDesigns
+    $<$<STREQUAL:$<TARGET_PROPERTY:MyDesigns,TYPE>,STATIC_LIBRARY>:MyDesignsplugin>
+    $<$<STREQUAL:$<TARGET_PROPERTY:account,TYPE>,STATIC_LIBRARY>:accountplugin>
+    $<$<STREQUAL:$<TARGET_PROPERTY:booking_model,TYPE>,STATIC_LIBRARY>:booking_modelplugin>
+    $<$<STREQUAL:$<TARGET_PROPERTY:nodeConection,TYPE>,STATIC_LIBRARY>:nodeConectionplugin>
+    $<$<STREQUAL:$<TARGET_PROPERTY:QtQrGen,TYPE>,STATIC_LIBRARY>:QtQrGenplugin>
+    $<$<STREQUAL:$<TARGET_PROPERTY:QtQrDec,TYPE>,STATIC_LIBRARY>:QtQrDecplugin>
+)
+
 
 set_target_properties(client_main PROPERTIES
     WIN32_EXECUTABLE ON
@@ -127,9 +129,7 @@ if(QTDEPLOY)
     )
 install(SCRIPT ${deploy_script})
 endif(QTDEPLOY)
-install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/DLockers
-)
+
 if(EMSCRIPTEN)
     prepare_wasm_folder()
     target_compile_definitions(client_main PRIVATE USE_EMSCRIPTEN)
