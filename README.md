@@ -1,5 +1,6 @@
 # [DLockers Client](https://eddytheco.github.io/DLockersClient/)
 
+This repo is now archived, please refer to [Dlockers repo](https://github.com/EddyTheCo/DLockers)
 
 ## Proof of Concept on implementing decentralized applications on the IOTA network.
 
