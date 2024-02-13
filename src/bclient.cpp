@@ -3,6 +3,9 @@
 #include <QDebug>
 #include<QJsonDocument>
 #include<QTimer>
+#include"nodeConnection.hpp"
+
+
 using namespace qiota::qblocks;
 
 using namespace qiota;
@@ -70,7 +73,7 @@ void Book_Client::setFunds(quint64 funds_m){
     if(funds_!=funds_m||funds_m==0)
     {
         funds_=funds_m;
-        auto info=Node_Conection::rest_client->get_api_core_v2_info();
+        auto info=Node_Conection::instance()->rest()->get_api_core_v2_info();
         QObject::connect(info,&Node_info::finished,reciever,[=]( ){
             funds_json=info->amount_json(funds_);
             emit fundsChanged();
@@ -84,13 +87,13 @@ void Book_Client::checkFunds(std::vector<qiota::Node_output>  outs)
     for(const auto& v:outs)
     {
         std::vector<Node_output> var{v};
-        auto bundle= Account::get_addr({0,0,0});
+        auto bundle= Account::instance()->get_addr({0,0,0});
         bundle.consume_outputs(var);
         if(bundle.amount)
         {
             total+=bundle.amount;
             total_funds.insert(v.metadata().outputid_.toHexString(),bundle.amount);
-            auto resp=Node_Conection::mqtt_client->get_outputs_outputId(v.metadata().outputid_.toHexString());
+            auto resp=Node_Conection::instance()->mqtt()->get_outputs_outputId(v.metadata().outputid_.toHexString());
             connect(resp,&ResponseMqtt::returned,reciever,[=](QJsonValue data){
                 const auto node_output=Node_output(data);
                 if(node_output.metadata().is_spent_)
@@ -124,7 +127,7 @@ void Book_Client::checkFunds(std::vector<qiota::Node_output>  outs)
             const auto unixtime=bundle.to_unlock.front();
             const auto triger=(unixtime-QDateTime::currentDateTime().toSecsSinceEpoch())*1000;
             QTimer::singleShot(triger+5000,reciever,[=](){
-                auto resp=Node_Conection::mqtt_client->get_outputs_outputId(v.metadata().outputid_.toHexString());
+                auto resp=Node_Conection::instance()->mqtt()->get_outputs_outputId(v.metadata().outputid_.toHexString());
                 connect(resp,&ResponseMqtt::returned,reciever,[=](QJsonValue data){
                     const auto node_output=Node_output(data);
                     checkFunds({node_output});
@@ -140,15 +143,15 @@ void Book_Client::checkFunds(std::vector<qiota::Node_output>  outs)
 void Book_Client::monitor_state(void)
 {
 
-    if(Node_Conection::state()==Node_Conection::Connected)
+    if(Node_Conection::instance()->state()==Node_Conection::Connected)
     {
         if(reciever)reciever->deleteLater();
         reciever=new QObject(this);
         setFunds(0);
         total_funds.clear();
-        auto info=Node_Conection::rest_client->get_api_core_v2_info();
+        auto info=Node_Conection::instance()->rest()->get_api_core_v2_info();
         QObject::connect(info,&Node_info::finished,reciever,[=]( ){
-            setClientId(Account::addr_bech32({0,0,0},info->bech32Hrp));
+            setClientId(Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
             if(!server_id_.isNull())
             {
 
@@ -160,7 +163,7 @@ void Book_Client::monitor_state(void)
                     {
                         check_state_output(node_outputs_->outs_.front());
                     }
-                    auto resp=Node_Conection::mqtt_client->
+                    auto resp=Node_Conection::instance()->mqtt()->
                             get_outputs_unlock_condition_address("address/"+serverAddress);
                     QObject::connect(resp,&ResponseMqtt::returned,reciever,[=](QJsonValue data){
                         const auto node_outputs_2=Node_output(data);
@@ -170,14 +173,14 @@ void Book_Client::monitor_state(void)
                     node_outputs_->deleteLater();
                 });
 
-                Node_Conection::rest_client->get_outputs<Output::Basic_typ>
+                Node_Conection::instance()->rest()->get_outputs<Output::Basic_typ>
                         (node_outputs_,"address="+serverAddress
                          +"&hasStorageDepositReturn=false&hasTimelock=false&hasExpiration=false&sender="
                          +get_server_id()+"&tag="+fl_array<quint8>("state").toHexString());
 
             }
-            auto resp2=Node_Conection::mqtt_client->
-                    get_outputs_unlock_condition_address("address/"+Account::addr_bech32({0,0,0},info->bech32Hrp));
+            auto resp2=Node_Conection::instance()->mqtt()->
+                         get_outputs_unlock_condition_address("address/"+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
             connect(resp2,&ResponseMqtt::returned,reciever,[=](QJsonValue data)
             {
                 checkFunds({Node_output(data)});
@@ -194,12 +197,12 @@ void Book_Client::monitor_state(void)
                     node_outputs2->deleteLater();
                 });
 
-                Node_Conection::rest_client->get_outputs<Output::Basic_typ>(node_outputs2,"expirationReturnAddress="+
-                                                                            Account::addr_bech32({0,0,0},info->bech32Hrp));
+                Node_Conection::instance()->rest()->get_outputs<Output::Basic_typ>(node_outputs2,"expirationReturnAddress="+
+                                                                                                      Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
                  info->deleteLater();
             });
-            Node_Conection::rest_client->get_outputs<Output::Basic_typ>(node_outputs,"address="+
-                                                                        Account::addr_bech32({0,0,0},info->bech32Hrp));
+            Node_Conection::instance()->rest()->get_outputs<Output::Basic_typ>(node_outputs,"address="+
+                                                                                                 Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
 
         });
 
@@ -212,7 +215,7 @@ void Book_Client::send_booking(const QJsonArray books)
     QTimer::singleShot(15000,this,[=](){this->set_state(Connected);});
     check_if_expired();
 
-    auto info=Node_Conection::rest_client->get_api_core_v2_info();
+    auto info=Node_Conection::instance()->rest()->get_api_core_v2_info();
     QObject::connect(info,&Node_info::finished,this,[=]( ){
 
 
@@ -227,10 +230,8 @@ void Book_Client::send_booking(const QJsonArray books)
 
                 std::vector<Node_output> outs_=node_outputs_expired_->outs_;
                 std::move(node_outputs_->outs_.begin(),node_outputs_->outs_.end(), std::back_inserter(outs_));
-                auto bundle=Account::get_addr({0,0,0});
+                auto bundle=Account::instance()->get_addr({0,0,0});
                 bundle.consume_outputs(outs_);
-
-
 
                 auto metadata_=Booking::create_new_bookings_metadata(books);
 
@@ -299,14 +300,13 @@ void Book_Client::send_booking(const QJsonArray books)
 
                     auto trpay=Payload::Transaction(essence,bundle.unlocks);
 
-                    auto resp=Node_Conection::mqtt_client->get_subscription("transactions/"+trpay->get_id().toHexString() +"/included-block");
+                    auto resp=Node_Conection::instance()->mqtt()->get_subscription("transactions/"+trpay->get_id().toHexString() +"/included-block");
                     connect(resp,&ResponseMqtt::returned,this,[=](auto var){
                         set_state(Connected);
                         resp->deleteLater();
                     });
                     auto block_=Block(trpay);
-                    Node_Conection::rest_client->send_block(block_);
-
+                    Node_Conection::instance()->rest()->send_block(block_);
 
                     auto var=trpay->get_id();
                     var.append(index);
@@ -325,11 +325,11 @@ void Book_Client::send_booking(const QJsonArray books)
                 node_outputs_expired_->deleteLater();
             });
 
-            Node_Conection::rest_client->get_outputs<Output::Basic_typ>(node_outputs_,"address="+Account::addr_bech32({0,0,0},info->bech32Hrp));
+            Node_Conection::instance()->rest()->get_outputs<Output::Basic_typ>(node_outputs_,"address="+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
 
         });
-        Node_Conection::rest_client->get_outputs<Output::Basic_typ>(node_outputs_expired_,
-                                                                    "expirationReturnAddress="+Account::addr_bech32({0,0,0},info->bech32Hrp));
+        Node_Conection::instance()->rest()->get_outputs<Output::Basic_typ>(node_outputs_expired_,
+                                                                           "expirationReturnAddress="+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
 
     });
 
@@ -343,7 +343,7 @@ void Book_Client::presentNft(const QString address)
     {
         set_state(Sending);
         QTimer::singleShot(15000,this,[=](){this->set_state(Connected);});
-        auto info=Node_Conection::rest_client->get_api_core_v2_info();
+        auto info=Node_Conection::instance()->rest()->get_api_core_v2_info();
         QObject::connect(info,&Node_info::finished,reciever,[=]( ){
 
             auto node_outputs_=new Node_outputs();
@@ -398,16 +398,16 @@ void Book_Client::presentNft(const QString address)
                     node_outputs_->deleteLater();
                     node_outputs_expired_->deleteLater();
                 });
-                Node_Conection::rest_client->
+                Node_Conection::instance()->rest()->
                         get_outputs<Output::NFT_typ>(node_outputs_expired_,
-                                                     "expirationReturnAddress="+Account::addr_bech32({0,0,0},info->bech32Hrp)+
+                                                                                 "expirationReturnAddress="+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp)+
                                                      "&issuer="+issuer);
 
             });
 
-            Node_Conection::rest_client->
+            Node_Conection::instance()->rest()->
                     get_outputs<Output::NFT_typ>(node_outputs_,
-                                                 "address="+Account::addr_bech32({0,0,0},info->bech32Hrp)+
+                                                                             "address="+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp)+
                                                  "&issuer="+issuer);
         });
     }
@@ -417,7 +417,7 @@ void Book_Client::sendNft(Node_output out,c_array address)
 {
 
     const auto eddAddr=Address::from_array(address);
-    auto info=Node_Conection::rest_client->get_api_core_v2_info();
+    auto info=Node_Conection::instance()->rest()->get_api_core_v2_info();
     QObject::connect(info,&Node_info::finished,reciever,[=]( ){
 
         auto node_outputs_expired_=new Node_outputs();
@@ -427,7 +427,7 @@ void Book_Client::sendNft(Node_output out,c_array address)
             auto node_outputs_=new Node_outputs();
             QObject::connect(node_outputs_,&Node_outputs::finished,this,[=]( ){
                 std::vector<Node_output> outs_={out};
-                auto bundle=Account::get_addr({0,0,0});
+                auto bundle=Account::instance()->get_addr({0,0,0});
                 bundle.consume_outputs(outs_);
 
                 if(bundle.nft_outputs.size())
@@ -475,13 +475,13 @@ void Book_Client::sendNft(Node_output out,c_array address)
                         bundle.create_unlocks(essence->get_hash());
 
                         auto trpay=Payload::Transaction(essence,bundle.unlocks);
-                        auto resp=Node_Conection::mqtt_client->get_subscription("transactions/"+trpay->get_id().toHexString() +"/included-block");
+                        auto resp=Node_Conection::instance()->mqtt()->get_subscription("transactions/"+trpay->get_id().toHexString() +"/included-block");
                         connect(resp,&ResponseMqtt::returned,this,[=](auto var){
                             set_state(Connected);
                             resp->deleteLater();
                         });
                         auto block_=Block(trpay);
-                        Node_Conection::rest_client->send_block(block_);
+                        Node_Conection::instance()->rest()->send_block(block_);
 
                     }
                     else
@@ -495,18 +495,18 @@ void Book_Client::sendNft(Node_output out,c_array address)
                 node_outputs_->deleteLater();
                 node_outputs_expired_->deleteLater();
             });
-            Node_Conection::rest_client->get_outputs<Output::Basic_typ>(node_outputs_,"address="+Account::addr_bech32({0,0,0},info->bech32Hrp));
+            Node_Conection::instance()->rest()->get_outputs<Output::Basic_typ>(node_outputs_,"address="+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
 
         });
-        Node_Conection::rest_client->get_outputs<Output::Basic_typ>(node_outputs_expired_,
-                                                                    "expirationReturnAddress="+Account::addr_bech32({0,0,0},info->bech32Hrp));
+        Node_Conection::instance()->rest()->get_outputs<Output::Basic_typ>(node_outputs_expired_,
+                                                                           "expirationReturnAddress="+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
 
     });
 }
 void Book_Client::check_if_expired(void)
 {
 
-    auto info=Node_Conection::rest_client->get_api_core_v2_info();
+    auto info=Node_Conection::instance()->rest()->get_api_core_v2_info();
     QObject::connect(info,&Node_info::finished,reciever,[=]( ){
 
         auto node_outputs_=new Node_outputs();
@@ -521,10 +521,10 @@ void Book_Client::check_if_expired(void)
             info->deleteLater();
             node_outputs_->deleteLater();
         });
-        Node_Conection::rest_client->
+        Node_Conection::instance()->rest()->
                 get_outputs<Output::Basic_typ>(node_outputs_,
-                                               "expirationReturnAddress="+Account::addr_bech32({0,0,0},info->bech32Hrp)+
-                                               "&sender="+Account::addr_bech32({0,0,0},info->bech32Hrp));
+                "expirationReturnAddress="+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp)+
+                "&sender="+Account::instance()->addr_bech32({0,0,0},info->bech32Hrp));
 
     });
 
@@ -535,7 +535,7 @@ QString Book_Client::get_server_id(void)const
 {
     if(server_id_.isNull())
         return QString("");
-    return qencoding::qbech32::Iota::encode(Node_Conection::rest_client->info()["protocol"].toObject()["bech32Hrp"].toString(),server_id_);
+    return qencoding::qbech32::Iota::encode(Node_Conection::instance()->rest()->info()["protocol"].toObject()["bech32Hrp"].toString(),server_id_);
 }
 void Book_Client::set_server_id(QString server_id_m)
 {
